@@ -4,7 +4,7 @@
 
 ### [我的博客在这里 &rarr;](http://mlxchange.github.io)
 
-![](https://raw.githubusercontent.com/qiubaiying/qiubaiying.github.io/master/img/readme-home.png)
+![]()
 
 
 ## 使用
@@ -81,7 +81,7 @@ tags:
 ### 侧边栏
 
 看右边:
-![](https://raw.githubusercontent.com/qiubaiying/qiubaiying.github.io/master/img/readme-side.png)
+![]()
 
 设置是在 `_config.yml`文件里面的`Sidebar settings`那块。
 
