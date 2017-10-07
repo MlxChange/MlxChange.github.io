@@ -134,7 +134,7 @@ featured-condition-size: 1     # A tag will be featured if the size of it is mor
 
 好友链接部分。这会在全部页面显示。
 
-设置是在 `_config.yml`文件里面的`Friends`那块，自己加吧。
+设置是在 `_config.yml`文件里面的`Friends`那块，自己加吧
 
 ```
 # Friends
