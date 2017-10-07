@@ -173,7 +173,7 @@ iframe在不同的设备中，将会自动的调整大小。保留内边距是�
 
 ### Comment
 
-博客不仅支持多说[Duoshuo](http://duoshuo.com)评论系统,支持[Disqus](http://disqus.com)评论系统。
+博客不仅支持多说[Duoshuo](http://duoshuo.com)评论系统,支持[Disqus](http://disqus.com)评论系统
 
 >多说即将关闭: 多说将于2017年6月1日正式关停服务, 所以还是用 Disqus 把！
 
