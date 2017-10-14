@@ -1,4 +1,4 @@
-# BY Blog
+# Mlx Blog
 
 > 下面是博客的搭建教程，这个教程修改自 [Hux](https://github.com/Huxpro/huxpro.github.io) 
 
@@ -42,7 +42,7 @@
 
 ```
 # Site settings
-title: Hux Blog             # 你的博客网站标题
+title: M Blog             # 你的博客网站标题
 SEOTitle: Hux Blog			# 在后面会详细谈到
 description: "Cool Blog"    # 随便说点，描述一下
 
