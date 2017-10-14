@@ -47,7 +47,7 @@ SEOTitle: Hux Blog			# 在后面会详细谈到
 description: "Cool Blog"    # 随便说点，描述一下
 
 # SNS settings      
-github_username: huxpro     # 你的github账号
+github_username: M    # 你的github账号
 weibo_username: huxpro      # 你的微博账号，底部链接会自动更新的。
 
 # Build settings
@@ -140,8 +140,8 @@ featured-condition-size: 1     # A tag will be featured if the size of it is mor
 # Friends
 friends: [
     {
-        title: "BY Blog",
-        href: "https://qiubaiying.github.io/"
+        title: "Mlx Blog",
+        href: "https://MlxChange.github.io/"
     },
     {
         title: "Apple",
