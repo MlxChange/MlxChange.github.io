@@ -1,0 +1,318 @@
+---
+layout:     post
+title:      Android热修复和插件化详解
+subtitle:   热修复&插件化
+date:       2017-09-20
+author:     MLX
+header-img: img/post-bg-ios9-web.jpg
+catalog: 	 true
+tags:
+    - Android
+    - 热修复
+    - 插件化
+typora-root-url: ./
+---
+
+## class文件
+
+    1. class文件是能够被JVM虚拟机加载的文件，称为字节码文件
+    2. class文件的生成：javac Hellow.java,就能够编译成为Hellow.class文件，Hellow.class文件是能够被JVM加载的，加载Hellow.class只需要用java Hellow即可，这里最好指定一下目标平台的JDK版本和原平台的JDK版本，即java Hellow -target 1.6 source -1.6
+    3. Class文件详解：
+    1. class文件是一种8位字节的二进制流文件， 各个数据项按顺序紧密的从前向后排列， 相邻的项之间没有间隙， 这样可以使得class文件非常紧凑， 体积轻巧， 可以被JVM快速的加载至内存， 并且占据较少的内存空间，但是每个类或者接口都单独占据一个文件
+    2. class文件的作用是记录一个类文件中所有的信息，包含类的名称，所有的方法，变量等，比如this，super都是在生成class文件中记录了当前类和父类
+    3. 
+
+| 类型   | 名称                                       | 说明                                       |
+| ---- | ---------------------------------------- | ---------------------------------------- |
+| u4   | magic;                                   | 魔数，固定值为0xCAFEBABE，用来判断当前文件是能被Java虚拟机处理的Class文件 |
+| u2   | minor_version;                           | 副版本号                                     |
+| u2   | major_version;                           | 主版本号                                     |
+| u2   | constant_pool_count;                     | 常量池计数器                                   |
+|      | cp_info constant_pool[constant_pool_count-1]; | 常量池                                      |
+| u2   | access_flags;                            | 类和接口层次的访问标志                              |
+| u2   | this_class;                              | 类索引                                      |
+| u2   | super_class;                             | 父类索引                                     |
+| u2   | interfaces_count;                        | 接口计数器                                    |
+| u2   | interfaces[interfaces_count];            | 接口表                                      |
+| u2   | fields_count;                            | 字段计数器                                    |
+|      | field_info fields[fields_count];         | 字段表                                      |
+| u2   | methods_count;                           | 方法计数器                                    |
+|      | method_info methods[methods_count];      | 方法表                                      |
+| u2   | attributes_count;                        | 属性计数器                                    |
+|      | attribute_info attributes[attributes_count]; | 属性表                                      |
+
+
+4.  针对移动端的弊端：
+      - 内存占用大，不适合移动端
+      - 堆栈的加栈模式，加载速度慢
+      - 文件IO操作多，类查找慢
+## dex文件
+1. dex文件是能够被DVM识别，加载并执行的文件格式，不仅仅可以由Java生成，也可以由C/C++生成.
+2. 手动编译生成并加载dex文件可以用dx命令：dx --dex --output Hellow.dex Hellow.class，adb push到手机中后，adb shell进入手机控制台，dalvikvm -cp /sdcard/Hellow.dex Hellow命令可以加载运行dex文件
+3. dex文件格式：dex文件也是一种8位字节的二进制流文件，各个数据项按顺序紧密的从前向后排列， 相邻的项之间没有间隙，不同于class文件的是，dex文件中所有的Java源文件都放在一个dex文件中(这里忽略分包技术)![dex文件格式][1]
+
+
+4. dex文件内容：![dex文件内容][2]
+
+
+[1]: http://upload-images.jianshu.io/upload_images/1152636-8230c5995981b7c2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240
+[2]: http://img.blog.csdn.net/20160215153108181?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center
+
+## header
+
+| 字段名称            | 偏移值  | 长度   | 说明                          |
+| --------------- | ---- | ---- | --------------------------- |
+| magic           | 0x0  | 8    | 魔数字段，值为"dex\n035\0"         |
+| checksum        | 0x8  | 4    | 校验码                         |
+| signature       | 0xc  | 20   | sha-1签名                     |
+| file_size       | 0x20 | 4    | dex文件总长度                    |
+| header_size     | 0x24 | 4    | 文件头长度，009版本=0x5c,035版本=0x70 |
+| endian_tag      | 0x28 | 4    | 标示字节顺序的常量                   |
+| link_size       | 0x2c | 4    | 链接段的大小，如果为0就是静态链接           |
+| link_off        | 0x30 | 4    | 链接段的开始位置                    |
+| map_off         | 0x34 | 4    | map数据基址                     |
+| string_ids_size | 0x38 | 4    | 字符串列表中字符串个数                 |
+| string_ids_off  | 0x3c | 4    | 字符串列表基址                     |
+| type_ids_size   | 0x40 | 4    | 类列表里的类型个数                   |
+| type_ids_off    | 0x44 | 4    | 类列表基址                       |
+| proto_ids_size  | 0x48 | 4    | 原型列表里面的原型个数                 |
+| proto_ids_off   | 0x4c | 4    | 原型列表基址                      |
+| field_ids_size  | 0x50 | 4    | 字段个数                        |
+| field_ids_off   | 0x54 | 4    | 字段列表基址                      |
+| method_ids_size | 0x58 | 4    | 方法个数                        |
+| method_ids_off  | 0x5c | 4    | 方法列表基址                      |
+| class_defs_size | 0x60 | 4    | 类定义标中类的个数                   |
+| class_defs_off  | 0x64 | 4    | 类定义列表基址                     |
+| data_size       | 0x68 | 4    | 数据段的大小，必须4k对齐               |
+| data_off        | 0x6c | 4    | 数据段基址                       |
+
+
+
+
+
+## JVM虚拟机
+
+JVM虚拟机结构如下
+
+![jvm](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/jvm.jpg)
+
+### 1 类加载器子系统（classLoader）
+
+在JVM启动时或者在类运行时将需要的class加载到JVM中 ，[ClassLoader类如何加载Class文件到JVM中](#classloader加载)
+
+### 2 Java栈区
+
+​	作用：存放的是Java方法执行时的所有的数据
+
+​	组成：由栈帧组成，一个栈帧代表一个方法的执行(每个方法从调用到执行完成就对应一个栈帧在虚拟机栈中的入栈到出栈)。比如 A方法调用B方法在调用C方法，然后执行完毕以后这个过程在Java栈中的入栈出栈顺序为：A入栈->B入栈->C入栈->C出栈->B出栈->A出栈  
+
+​	保存的内容：局部变量表，栈操作数，动态链接，方法出口
+
+### 3 本地方法栈
+
+​	与栈区区别不大，唯一不同的就是存放的是Native方法的栈帧
+
+### 4 方法区
+
+​	保存的内容：被虚拟机加载的类信息，常量，静态变量，即时编译器编译后的数据 （永远占据内存的）
+
+### 5 堆区
+
+​	堆区是JVM中最大的一块内存，被所有线程共享的一块存储区域，在虚拟机启动时创建，它是JVM用来存储对象实例以及数组值的区域，可以认为Java中所有通过new创建的对象的内存都在此分配。Java堆在JVM启动的时候就被创建，堆中储存了各种对象，这些对象被自动管理内存系统（Automatic Storage Management System，也即是常说的 “Garbage Collector（垃圾回收器）”）所管理。这些对象无需、也无法显示地被销毁。
+
+​	JVM将Heap分为两块：新生代New Generation和旧生代Old Generation
+
+
+
+## 垃圾回收(GC)
+
+​	垃圾回收也称为GC，主要就是JVM虚拟机中由垃圾回收器来负责收集回收在JVM中堆区的内存。当新生代内存满了以后，新生代中的数据会移动到旧生代中，旧生代内存也满的话就会发生OOM(Out of Memory)异常。
+
+### 垃圾收集算法
+
+垃圾回收最重要的一点就是垃圾收集器如何判断一个对象是否需要回收，这就是垃圾收集算法，垃圾收集算法在不同版本的JVM上有不同的算法实现：
+
+#### 1 引用计数法：
+
+​	在Java1.2之前使用的是此算法，就是说当一个对象创建的时候同时会创建一个引用计数器，每当有一个新引用引用到此对象的时候，引用计数器+1，而当其中一个引用销毁的时候，引用计数器-1，当引用计数为0的似乎，此对象被标记为可回收的，就会被GC回收掉。
+
+​	缺点：如果存在这么两个对象A和B，A引用B，B引用A，这样的话AB的引用计数都是1，但是此时AB都是不可达也就是说没有路径能够指向A和B，也就是说A和B已经是垃圾了，但是此时GC无法回收这两个对象
+
+#### 2 可达性算法（根搜索算法）
+
+​	可达性算法是从图论中发展而来的， 把所有引用关系看做一个图，然后从根节点开始搜索所有引用节点，当所有的节点搜索完以后，剩下的节点都是没有被引用的节点，这个节点就是不可达节点，就是可以回收的对象
+
+### 垃圾回收算法
+
+垃圾回收另外一个关键的地方在于当判断了一个对象时可以回收的对象以后该如何从内存中清除，这就是垃圾回收算法，垃圾回收算法也有不同的算法实现：
+
+#### 1 标记-清除算法
+
+此算法是根集合遍历所有节点，此时B标记为可回收对象，然后就把B对象置为空
+
+优点：不需要对内存空间进行移动，所以极为高效
+
+缺点： 标记清除之后会产生大量不连续的内存碎片。
+
+![GC1](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC1.jpg)
+
+![GC1_2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC1_2.jpg)
+
+
+
+### 2 复制算法
+
+它将可用内存容量划分为大小相等的两块，每次只使用其中的一块。当这一块用完之后，就将还存活的对象复制到另外一块上面，然后在把已使用过的内存空间一次理掉。这样使得每次都是对其中的一块进行内存回收，不会产生碎片等情况，只要移动堆订的指针，按顺序分配内存即可，实现简单，运行高效。
+
+主要缺点：内存缩小为原来的一半。
+
+![GC2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC2.jpg)
+
+![GC2_2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC2_2.jpg)
+
+### 3. 标记  - 整理算法
+
+标记操作和“标记-清除”算法一致，后续操作不只是直接清理对象，而是在清理无用对象完成后让所有存活的对象都向一端移动，并更新引用其对象的指针。
+
+主要缺点：在标记-清除的基础上还需进行对象的移动，成本相对较高，好处则是不会产生内存碎片。
+
+![GC3](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC3.jpg)
+
+![GC3_2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC3_2.jpg)
+
+4、分代收集算法
+
+根据对象的存活周期的不同将内存划分为几块。一般把java堆分为新生代和老年代，这样就可以根据各个年代的特点采用最适当的收集算法。在新生代，每次垃圾收集时都发现有大批对象死去，只有少量存活，那就选用复制算法，只需要付出少量存活对象的复制成本就可以完成收集。而老年代中因为对象存活率高、没有额外空间对他进行分配担保，就必须使用“标记-整理”算法进行回收
+
+
+
+## ClassLoader加载
+
+#### 1 Android中ClassLoader的种类
+
+1. BootClassLoader  作用和Java中的BootStrap ClassLoader作用基本一致，主要是加载Android framework层的字节码文件
+2. PathClassLoader 作用和Java中的AppClassLoader基本类似，主要是负责加载已经安装到系统中的apk
+3. DexClassLoader 作用和Java中CustomClassLoader基本一致，主要是加载指定路径下的class字节码文件
+4. BaseDexClassLoader是PathClassLoader和DexClassLoader的父类
+
+> 加载一个app最少需要几个ClassLoader呢？是两个，一个是BootClassLoader，一个是PathClassLoader
+
+#### 2 ClassLoader的特点
+
+​	ClassLoader使用的是双亲委托模式，即每一个ClassLoader都会有一个父加载器，BootClassLoader因为是用C++实现的，所以并没有父加载器。加载流程，当需要加载一个class到内存中的时候，首先去判断父加载器是否加载了这个类，如果父加载器没有加载，继续往上查找，如果加载过就返回这个类，如果没有加载过，最终由子Classloader类加载。这样做有两个好处：
+
+   	1. 类加载的共享功能：因为只要被顶层Classloader加载过的类那么就会缓存在内存中，其他地方用的就不需要重新加载
+     2. 类加载的隔离功能：共同不同继承路径上加载的类不是同一个类，判断是否是同一个类不仅仅看包名和类名，还会验证加载器，只有都相同才会认定是同一个类，这样做就是为了防止用户篡改核心类库中的类，比如说自定义了一个string类，即使包名也相同，也不会被认为是系统类库中的string类
+
+#### 3 ClassLoader的源码解析
+
+双亲委托代理模式的实现：ClassLoader.java的loadclass方法，这个方法的第三行检测父加载器是否已经加载了这个类
+
+```java
+ protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
+        Class<?> clazz = findLoadedClass(className);
+
+       if (clazz == null) {
+           try {
+               clazz = parent.loadClass(className, false);
+           } catch (ClassNotFoundException e) {
+                // Don't want to see this.
+           }
+
+           if (clazz == null) {
+              clazz = findClass(className);
+           }
+       }
+       return clazz;
+    }
+```
+
+那么Android究竟是如何加载一个类到内存中去的呢
+
+这是BaseDexClassLoader.java的代码，它是继承于ClassLoader，同时也是PathClassLoader和DexClassLoader的父加载器，在ClassLoader中，findClass方法是一个空方法，目的是要子类去实现，这是BaseDexClassLoader的实现
+
+```
+61  protected Class<?> findClass(String name) throws ClassNotFoundException {
+62        Class clazz = pathList.findClass(name);
+63
+64        if (clazz == null) {
+65            throw new ClassNotFoundException("Didn't find class \"" + name + "\" on path: " +       originalPath);
+66        }
+67
+68        return clazz;
+69    }
+```
+
+其实是调用了pathList的findclass方法，pathList是什么呢？在它的构造方法中可以看到
+
+```java
+50    public BaseDexClassLoader(String dexPath, File optimizedDirectory,
+51            String libraryPath, ClassLoader parent) {
+52        super(parent);
+53
+54        this.originalPath = dexPath;
+55        this.originalLibraryPath = libraryPath;
+56        this.pathList =
+57            new DexPathList(this, dexPath, libraryPath, optimizedDirectory);
+58    }
+```
+
+那么这个DexPathList又是何方神圣，怎么加载类呢？
+
+```java
+40  final class DexPathList {
+43    private static final String DEX_SUFFIX = ".dex";
+44    private static final String JAR_SUFFIX = ".jar";
+45    private static final String ZIP_SUFFIX = ".zip";
+46    private static final String APK_SUFFIX = ".apk";
+47
+48    /** class definition context */
+49    private final ClassLoader definingContext;
+50
+51    /** list of dex/resource (class path) elements */
+52    private final Element[] dexElements;
+53
+54    /** list of native library directory elements */
+55    private final File[] nativeLibraryDirectories;
+56   ....................
+     }
+```
+
+从这里也可以看到，classloader可以加载.dex .jar .zip .apk的文件，但是可能有人觉得有问题了，我记得好像还有一个so文件来着，其实这个就是后面插件化所要做的事情之一，就是让重写ClassLoader让它能够支持so文件
+
+继续看源码，追踪这个pathList.findClass中的findClass方法
+
+```java
+310    public Class findClass(String name) {
+311        for (Element element : dexElements) {
+312            DexFile dex = element.dexFile;
+313
+314            if (dex != null) {
+315                Class clazz = dex.loadClassBinaryName(name, definingContext);
+316                if (clazz != null) {
+317                    return clazz;
+318                }
+319            }
+320        }
+321
+322        return null;
+323    }
+```
+
+原来是遍历了dexElements，并调用了Element中DexFile的loadClassBinaryName方法，继续追踪DexFile
+
+```java
+210    public Class loadClassBinaryName(String name, ClassLoader loader) {
+211        return defineClass(name, loader, mCookie);
+212    }
+```
+
+话不多说，继续
+
+```java
+ private native static Class defineClass(String name, ClassLoader loader, int cookie);
+```
+
+到这里就看到，这里已经是native的方法，能力有限，这里就不在分析native的方法了（并不会告诉你我看不懂）
+
+至此，所有的流程就已经走完了。
