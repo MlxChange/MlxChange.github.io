@@ -1,9 +1,9 @@
 # Site settings
 title: MLX Blog
-SEOTitle: MLX的博客 | Hux Blog
+SEOTitle: MLX的博客 | Mlx Blog
 header-img: img/home-bg.jpg
 email: MlxChange@foxmail.com
-description: "关于程序与设计、黑客与画家 | 黄玄，Web & Mobile Lover，Software Engineer，UX Designer | 这里是 @Mlx 的个人博客，与你一起发现更大的世界。"
+description: "弱小和无知不是生存的障碍，傲慢才是。"
 keyword: "Mlx MlxChange Android Android自定义View Ndk JNI FFmpeg"
 url: "https://mlxchange.github.io"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
@@ -13,12 +13,8 @@ future: true
 
 # SNS settings
 RSS: false
-weibo_username:     huxpro
-zhihu_username:     huxpro
-github_username:    huxpro
-twitter_username:   huxpro
-#facebook_username:  huxpro
-#linkedin_username:  firstname-lastname-idxxxx
+github_username:    MlxChange
+
 
 
 
@@ -78,7 +74,7 @@ ga_domain: huangxuan.me
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "For the next quantum leap<br>离开世界之前，一切都是过程"
+sidebar-about-description: "世界上仅有一种真正的英雄主义，那就是在看清生活的真相后依然热爱生活。"
 sidebar-avatar: /img/avatar-hux-ny.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
@@ -102,35 +98,5 @@ page-mathjax: false
 
 # Friends
 friends: [
-    {
-    #     title: "Su",
-    #     href: "http://su.gallery/"
-    # },{
-        title: "乱序",
-        href: "http://mida.re/"
-    },{
-        title: "Sherry Wu",
-        href: "https://xuechundesign.github.io"
-    },{
-        title: "Luke 的自留地",
-        href: "http://hmqk1995.github.io"
-    },{
-        title: "Ebn's Blog",
-        href: "http://ebnbin.com/"
-    },{
-        title: "SmdCn's Blog",
-        href: "http://blog.smdcn.net"
-    },{
-        title: "JiyinYiyong",
-        href: "http://tiye.me/"
-    },{
-        title: "David's Game",
-        href: "https://www.ruoyaowu.com/"
-    },{
-        title: "DHong Say",
-        href: "http://dhong.co"
-    },{
-        title: "尹峰以为",
-        href: "http://ingf.github.io/"
-    }
+
 ]
