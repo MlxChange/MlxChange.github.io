@@ -13,7 +13,7 @@ future: true
 
 # SNS settings
 RSS: false
-github_username:    MlxChange
+github_username: MlxChange
 
 
 
@@ -55,7 +55,7 @@ kramdown:
 
 
 # Disqus settings
-disqus_username: hux
+# disqus_username: hux
 
 # Netease settings
 netease_comment: false
@@ -67,15 +67,15 @@ netease_comment: false
 # ba_track_id: [your track id]
 
 # Google Analytics
-ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
-ga_domain: huangxuan.me
+# ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
+# ga_domain: huangxuan.me
 
 
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "世界上仅有一种真正的英雄主义，那就是在看清生活的真相后依然热爱生活。"
-sidebar-avatar: /img/avatar-hux-ny.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-about-description: "一枝独秀不是春，百花齐放春满园"
+sidebar-avatar: /img/mlx.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
 
