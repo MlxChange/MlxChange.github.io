@@ -10,7 +10,7 @@ tags:
     - Android
     - 热修复
     - 插件化
-typora-root-url: ./
+typora-root-url: ..
 ---
 
 ## class文件
@@ -94,7 +94,7 @@ typora-root-url: ./
 
 JVM虚拟机结构如下
 
-![jvm](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/jvm.jpg)
+![jvm](/img/jvm.jpg)
 
 ### 1 类加载器子系统（classLoader）
 
@@ -154,9 +154,9 @@ JVM虚拟机结构如下
 
 缺点： 标记清除之后会产生大量不连续的内存碎片。
 
-![GC1](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC1.jpg)
+![GC1](/img/GC1.jpg)
 
-![GC1_2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC1_2.jpg)
+![GC1_2](/img/GC1_2.jpg)
 
 
 
@@ -166,9 +166,9 @@ JVM虚拟机结构如下
 
 主要缺点：内存缩小为原来的一半。
 
-![GC2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC2.jpg)
+![GC2](/img/GC2.jpg)
 
-![GC2_2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC2_2.jpg)
+![GC2_2](/img/GC2_2.jpg)
 
 ### 3. 标记  - 整理算法
 
@@ -176,9 +176,9 @@ JVM虚拟机结构如下
 
 主要缺点：在标记-清除的基础上还需进行对象的移动，成本相对较高，好处则是不会产生内存碎片。
 
-![GC3](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC3.jpg)
+![GC3](/img/GC3.jpg)
 
-![GC3_2](https://github.com/MlxChange/MlxChange.github.io/blob/master/_posts/img/GC3_2.jpg)
+![GC3_2](/img/GC3_2.jpg)
 
 4、分代收集算法
 
@@ -202,7 +202,7 @@ JVM虚拟机结构如下
 ​	ClassLoader使用的是双亲委托模式，即每一个ClassLoader都会有一个父加载器，BootClassLoader因为是用C++实现的，所以并没有父加载器。加载流程，当需要加载一个class到内存中的时候，首先去判断父加载器是否加载了这个类，如果父加载器没有加载，继续往上查找，如果加载过就返回这个类，如果没有加载过，最终由子Classloader类加载。这样做有两个好处：
 
    	1. 类加载的共享功能：因为只要被顶层Classloader加载过的类那么就会缓存在内存中，其他地方用的就不需要重新加载
-     2. 类加载的隔离功能：共同不同继承路径上加载的类不是同一个类，判断是否是同一个类不仅仅看包名和类名，还会验证加载器，只有都相同才会认定是同一个类，这样做就是为了防止用户篡改核心类库中的类，比如说自定义了一个string类，即使包名也相同，也不会被认为是系统类库中的string类
+          2. 类加载的隔离功能：共同不同继承路径上加载的类不是同一个类，判断是否是同一个类不仅仅看包名和类名，还会验证加载器，只有都相同才会认定是同一个类，这样做就是为了防止用户篡改核心类库中的类，比如说自定义了一个string类，即使包名也相同，也不会被认为是系统类库中的string类
 
 #### 3 ClassLoader的源码解析
 
