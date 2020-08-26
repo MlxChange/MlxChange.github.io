@@ -48,8 +48,8 @@ layout: default
                 </ul>
                 <hr style="visibility: hidden;">
 
-                <div id="gitalk-container"></div>
-                <div>MLXLXLXLXLXLXLXLXXL</div>
+
+
 
             </div>  
 
@@ -93,40 +93,12 @@ layout: default
 
 
 
-<script>
-    const gitalk = new Gitalk({
-        clientID: '32abc15ca32375a09910',
-        clientSecret: '11edcb45dddf5c3716217b56e4355119b750aafb',
-        repo: 'MlxChange.github.io',
-        owner: 'MlxChange',
-        admin: ['MlxChange'],
-        id: location.pathname,      // Ensure uniqueness and length less than 50
-        distractionFreeMode: false  // Facebook-like distraction free mode
-    })
 
-    gitalk.render('gitalk-container')
-
-</script>
 <!-- 网易云跟帖JS代码 end -->
 
 
 
-{% if site.disqus_username %}
-<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-    /* * * CONFIGURATION VARIABLES * * */
-    var disqus_shortname = "{{site.disqus_username}}";
-    var disqus_identifier = "{{page.id}}";
-    var disqus_url = "{{site.url}}{{page.url}}";
 
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<!-- disqus 公共JS代码 end -->
-{% endif %}
 
 
 {% if site.anchorjs %}
