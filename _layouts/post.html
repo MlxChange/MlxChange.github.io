@@ -48,6 +48,7 @@ layout: default
                 </ul>
                 <hr style="visibility: hidden;">
 
+                <div id="gitalk-container"></div>
 
 
 
@@ -92,7 +93,20 @@ layout: default
 {% endif %}
 
 
+<script>
+    const gitalk = new Gitalk({
+        clientID: '32abc15ca32375a09910',
+        clientSecret: '11edcb45dddf5c3716217b56e4355119b750aafb',
+        repo: 'MlxChange.github.io',
+        owner: 'MlxChange',
+        admin: ['MlxChange'],
+        id: location.pathname,      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+    })
 
+    gitalk.render('gitalk-container')
+
+</script>
 
 <!-- 网易云跟帖JS代码 end -->
 
