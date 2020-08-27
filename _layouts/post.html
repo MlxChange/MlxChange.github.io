@@ -94,7 +94,7 @@ layout: default
 
 
 <script>
-    var id=location.href.substr(0,20)
+    var id=md5(location.pathname)
     const gitalk = new Gitalk({
         clientID: '32abc15ca32375a09910',
         clientSecret: '11edcb45dddf5c3716217b56e4355119b750aafb',
