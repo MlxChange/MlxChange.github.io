@@ -32,8 +32,10 @@
 
   {% if site.juejin_userid %}
   <li>
-    <a target="_blank" href="https://juejin.im/user/1345457961046055">
-      <img src="/img/掘金.png" width="64px" height="64px"/>
+    <a target="_blank" href="https://juejin.im/user/{{ juejin_userid }}">
+      <span class="fa-stack fa-lg">
+        <img src="/img/掘金.png" />
+      </span>
     </a>
   </li>
   {% endif %}
