@@ -19,12 +19,23 @@
   </li>
   {% endif %}
 
-  {% if site.zhihu_username %}
+  {% if site.github_username %}
   <li>
-    <a target="_blank" href="https://www.zhihu.com/people/{{ site.zhihu_username }}">
+    <a target="_blank" href="https://github.com/{{ site.github_username }}">
       <span class="fa-stack fa-lg">
         <i class="fa fa-circle fa-stack-2x"></i>
-        <i class="fa  fa-stack-1x fa-inverse">知</i>
+        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+      </span>
+    </a>
+  </li>
+  {% endif %}
+
+  {% if site.juejin_userid %}
+  <li>
+    <a target="_blank" href="https://juejin.im/user/{{ juejin_userid }}">
+      <span class="fa-stack fa-lg">
+        <i class="fa fa-circle fa-stack-2x"></i>
+        <i class="fa  fa-stack-1x fa-inverse">掘金</i>
       </span>
     </a>
   </li>
@@ -49,15 +60,6 @@
     </a>
   </li>
   {% endif %}
-  {% if site.github_username %}
-  <li>
-    <a target="_blank" href="https://github.com/{{ site.github_username }}">
-      <span class="fa-stack fa-lg">
-        <i class="fa fa-circle fa-stack-2x"></i>
-        <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-      </span>
-    </a>
-  </li>
-  {% endif %}
+
 
 </ul>
