@@ -1,0 +1,259 @@
+---
+layout:     post
+title:      强行进阶之打造Github近千Star且登顶Trending榜的无敌特效
+subtitle:   本文将从0到1带你一步步打造Github上近千Star的无敌炫酷特效
+date:       2020-09-19
+author:     MLX
+header-img: img/android_bg.jpg
+catalog: 	 true
+tags:
+    - Android
+    - 自定义View
+    - Github
+typora-root-url: ..
+---
+
+[带你实现女朋友欲罢不能的网易云音乐宇宙尘埃特效](https://juejin.im/post/6871049441546567688)
+
+这是自定义View系列的上一篇文章，上一篇文章是自定义View的，本篇文章是自定义ViewGroup的。
+
+## 前言
+
+这是本篇特效的Github地址：https://github.com/MlxChange/WaveDisPlay
+
+我先承认我吹牛了，标题是近千Star(虽然只有700)，且登顶Trending榜(当时排Kotlin分类第三名)。但是我仍然有一颗上进的心，吹牛是无罪的！
+
+大家且先放下手中40m的大刀，让我先跑39米，看看我这次能给大家整个什么花活再决定是否砍我。
+
+还是同样的道理，我知道没图是骗不了人的，先放图，看看今天实现的效果是否真的那么炫酷。
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/161bd77df5c546c295132f986c37b372~tplv-k3u1fbpfcp-zoom-1.image)
+
+怎么样是不是还算有那么一丢丢炫酷的感觉？？
+
+这个效果是一个自定义ViewGroup，相信有很多小伙伴平常写自定义View还是较多的，但是自定义ViewGroup就比较少了。主要啊，自定义ViewGroup考虑的东西太多了，又是什么测量，又是什么布局，有的时候还得考虑滑动冲突，真的是要多麻烦有多麻烦。
+
+不过，本篇就带你一点点分析效果入手，到实现效果，再到处理这些麻烦事，由浅入深的让你也能轻松学会自定义ViewGroup。妈妈再也不用担心我不会自定义ViewGroup了。
+
+另外，大家也可以看看我上一篇文章，对自定义View掌握不够熟练的可以考虑我的实现方式，就是一点点实现，然后再慢慢修改，增加效果。
+
+话不多说，放码过来。
+
+![](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5c7aa6cb9861402a80dd8f5284217af0~tplv-k3u1fbpfcp-zoom-1.image)
+
+## 特效分析
+
+由于是自定义ViewGroup，效果还是蛮复杂的。我刚开始看到这个原效果图的时候，我内心是拒绝的，不能说你UI设计那么炫酷，根本不考虑我们程序员的辛苦把，坚决不做这种东西！
+
+于是我和UI打了一架，谁赢了听谁的。现在看到实现的效果，我只想说 **真香**。
+
+![](/img/emoji/真香.jpg)
+
+好了，我不皮了。我们认真来看一下效果把。
+
+首先，这个效果可以看到有很多的页面，就像列表一样，记得之前看过一个效果就是探探那种效果，左滑喜欢，右滑不喜欢和这个类似。所以我起初想的是看能不能从自定义LayoutManager或者自定义一个View继承于RecyclerView入手，后来我还是放弃了，因为它们不太容易实现预览到下一个界面这种效果，最终决定了自定义一个ViewGroup去实现。
+
+这个效果我觉得最特殊的在于能够通过拖拽看到下一个界面的内容，就像拉窗帘一样，并且划过中心之后，能够自动的滑动到另一侧，并且有反弹效果，然后显示下一个页面。当下一个页面完全显示的时候，此时拖拽按钮自动生成，再次预览下下个页面。而且按钮也能按回去，按回去以后反方向就会生成一个新的按钮，显示上一页的内容。
+
+综上所述，我总结了几点：
+
+1. 是一个自定义ViewGroup
+2. 子View堆叠显示，就像列表一样可以自定义子View的内容，并且能预览到下一页或者上一页的内容。
+3. 有一个拖拽的按钮，在往外拉的时候按钮也在不断的变大，缩回去的时候按钮在不断变小，并且是一个很圆滑的效果
+4. 在完全滑动到另一侧的时候，还会反弹几下
+
+其实我觉得其他的都比较好实现，比较麻烦的就是这个拖拽按钮，我决定从拖拽按钮入手。
+
+## 拖拽按钮
+
+虽然讲的是自定义ViewGroup，但是做自定义View不能一上来就开干，我先写个自定义View，先看看这个拖拽按钮能不能实现，如果这个都不能实现的话，那后面的就找个借口甩锅给UI不是就不需要写了吗。
+
+![](/img/emoji/机智如我.jpg)
+
+我先看看这个拖拽按钮是怎么实现的。
+
+先从左边的按钮开始看，毕竟屏幕的原点在左上角嘛。
+
+首先它距离左边有一小点距离，从上到下就是一条线，只是中间有个圆不圆，尖不尖的突起。这个突起我先不管它，我先画出这个线。因为是测试，我创建一个TestView
+
+```kotlin
+class TestView  @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
+
+
+}
+```
+
+然后是画线。我们不妨先思考一下，如何画这个线。在效果图中虽然确实是一条线，但是它左边也有内容显示，所以我觉得更像是一个细长的矩形，只不过这个细长的矩形中出了一个叛徒(突起)。所以画线变成了画矩形，而且由于这个叛徒的存在，简单的canvas画矩形显然是无法在后续的矩形上添加这个叛徒的，所以得用那个另外一个方式画矩形，那么是什么呢？
+
+没错，就是Path，Path一样可以达到同样的效果。所以开干。
+
+### 画矩形
+
+定义一个画笔和Path
+
+```kotlin
+var path= Path()
+var paint =Paint()
+
+init {
+    paint.color=Color.RED //为了方便辨识，我们定义红色
+    paint.style=Paint.Style.STROKE
+}
+```
+
+矩形怎么画呢？其实和我们在纸上画一模一样，从原点画个线到右边，然后在画直线到下面，再往左画一个直线，最后和原点闭合。如此一个矩形就出来了。灵魂画师就是我本人了。
+
+![](/img/waveRect.png)
+
+这个画法其实Path很好的帮我们实现，并且我们为了方便，还是定义一个中心点centerX和centerY
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    path.lineTo(100f,0f)//100只是个测试距离，画上图步骤1
+    path.lineTo(100f,centerY*2)//画步骤2
+    path.lineTo(0f,centerY*2)//画步骤3
+    path.close()//闭合，也就是画步骤4
+    canvas.drawPath(path,paint)
+}
+
+override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+    super.onSizeChanged(w, h, oldw, oldh)
+    centerX= (w/2).toFloat()//定义屏幕中心X值
+    centerY= (h/2).toFloat()//定义屏幕中心Y值
+}
+```
+
+那我们看一下效果吧
+
+<img src="/img/waveImg1.jpg" style="zoom: 25%;" />
+
+emmm看起来有点意思了，不过状态栏是什么鬼？啊 这个不要管他啦，就是透明状态栏而已啦。
+
+### 画突起
+
+那我们现在考虑一下如何画这个突起呢？
+
+其实突起嘛，在纸上画应该是这样的
+
+<img src="/img/画突起1.png" style="zoom:50%;" />
+
+你看如果我们在纸上画还是很简单的，右边的线那里只需要多个突起即可。多了三步，看看代码怎么实现吧
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    path.lineTo(100f,0f)//上图第一步
+    path.lineTo(100f,centerY-200)//上图第二步
+    path.lineTo(180f,centerY)//第三步
+    path.lineTo(100f,centerY+200)//第四步
+    path.lineTo(100f,centerY*2)//第五步
+    path.lineTo(0f,centerY*2)//第六步
+    path.close()//第七步
+    canvas.drawPath(path,paint)
+}
+```
+
+效果如何呢？
+
+<img src="/img/waveImg2.jpg" style="zoom:25%;" />
+
+看起来有点意思了哦~不过人家那个效果看起来很圆滑，你这个尖尖的，有点不大一样啊。
+
+这位兄台，你说的很有道理，不过圆的我不会画啊。咋办呢？就只有尖尖才能维持得了生活这样子，里面的老哥个个都是人才说话又好听，啊等等不对，走错片场了。
+
+圆形是什么呢？是曲线，没错吧？在计算机中我们该如何画曲线呢？我们看看有没有小伙伴知道啊，我等你十分钟
+
+啊，十分钟过去了，没人知道我就说答案了哦
+
+没错，就是贝塞尔曲线！
+
+![](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/97617b523b534dbf83b3b10790288a83~tplv-k3u1fbpfcp-zoom-1.image)
+
+什么，你没听过贝塞尔曲线？老哥，你out了。
+
+贝塞尔曲线是计算机中模拟曲线的一种算法，通过方程balabalabla，省略一堆定义.....
+
+简而言之，贝塞尔曲线就是帮我们画曲线的，通过位置点和控制点来确定曲线。如果不会的小伙伴，我建议看看[GcsSloop](https://www.gcssloop.com/#blog)或者扔物线的关于贝塞尔曲线的基础用法。我当初学习的时候也是跟着他们学习的。非常有学习价值~
+
+我们看一下二阶贝塞尔曲线的方法把
+
+```java
+/**
+ * 从上一个点开始，绘制二阶Bezier曲线
+ * (x1,y1)为控制点， (x2,y2)为终点
+ */
+public void quadTo(float x1, float y1, float x2, float y2) ；
+```
+
+那么话说回来，用贝塞尔曲线画，应该怎么画呢？我们继续尝试在纸上画一下试试
+
+![](/img/wave贝塞尔1.png)
+
+贝塞尔曲线就对应着步骤三了.起始点就是A点了，控制点就是B点了，终点那应该就是C点了。
+
+这个点的坐标呢？我们假设步骤一的长度为100，a点到B点在X方向上的偏移是100，B点的Y坐标就是中心坐标的话，B点的坐标就是(100+100,centerY)。然后A到C的距离我们设定为200，这些应该不难理解
+
+我们代码上实践一下
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    path.lineTo(100f,0f)//步骤1
+    path.lineTo(100f,centerY-100)步骤2
+    path.quadTo(200f,centerY,100f,centerY+100)//步骤3
+    path.lineTo(100f,centerY*2)//步骤4
+    path.lineTo(0f,centerY*2)//步骤5
+    path.close()//步骤6
+    canvas.drawPath(path,paint)
+}
+```
+
+效果是如何的呢？我们看看
+
+<img src="/img/wave突起2.jpg" style="zoom:25%;" />
+
+emmm好像不是那么辣眼睛了，不过这个突起着实有点突兀。怎么看怎么觉得像是塞了钱进剧组的。
+
+你这么一说，我和效果图一比对，我感觉我做成这样，老板怕不是要立马开除我了。可是效果图那么圆滑的特效是如何做出来的呢？
+
+其实也很简单，二阶贝塞尔曲线不行，那就让它兄弟三阶贝塞尔曲线出马，三阶贝塞尔曲线还不行，就四阶五阶。。。
+
+其实最终效果是个六阶贝塞尔曲线，如下图
+
+<img src="/img/六阶贝塞尔曲线.png" style="zoom:50%;" />
+
+P1点和P8点是位置点，其余全是控制点。红色的线就是生成的曲线，是不是看得出来很圆滑了呢？方案是不是很简单呢？
+
+![](/img/emoji/人话么.jpeg)
+
+啊，大刀不要落下来！我认错了！其实一点不简单。我当初思考，也是思考了半天才想出来。
+
+六阶虽然难弄，但是我们可以分解啊。分解成两个三阶的贝塞尔曲线不就OK了？
+
+我们以P1为起始点，P4为终点，P2,P3就是位置点，我们半个半个画不就很简单了嘛
+
+上半部分就变成了这样：
+
+![](/img/贝塞尔曲线2.png)
+
+那我们来看一下三阶贝塞尔曲线的方法把
+
+```java
+/*
+ *	x1,y1是第一个控制点的位置，对应P2
+ *	x2,y2是第二个控制点的位置, 对应P3
+ *	x3,y3是最后一个位置点的位置，对应p4
+ */
+public void cubicTo(float x1, float y1, float x2, float y2,float x3, float y3)
+```
+
+那么他们的坐标是怎么确定的呢？
+
+我们在纸上继续画画试试
+
+![](/img/wave突起3.png)
+
+假定p4的纵坐标就是屏幕的centerY，p1到p4的在Y方向上的偏移是100
