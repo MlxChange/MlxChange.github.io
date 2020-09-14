@@ -256,4 +256,151 @@ public void cubicTo(float x1, float y1, float x2, float y2,float x3, float y3)
 
 ![](/img/wave突起3.png)
 
-假定p4的纵坐标就是屏幕的centerY，p1到p4的在Y方向上的偏移是100
+P1,P4就是位置点，P2,P3就是控制点。那么P2,P3,P4的距离如何去确定呢？
+
+有很多在线生成贝塞尔曲线的网站，你生成四个点，摆的差不多了，看看他们的坐标就能大概知道是多少了。
+
+我之前呢已经去试过了，以P1为(0,0)的话呢,几个点的坐标如下：
+
+p2(0,100)，p3(90,75)，p4(100,150)。由于P4的Y坐标我们已经确定为centerY了，所以P1只能是(100,centerY-150).代码如下：
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    path.lineTo(100f,0f)//第一步
+    path.lineTo(100f,centerY-150)//第二步
+    path.cubicTo(100f,centerY-150f+100,100f+90f,centerY-150+75f,100f+100f,centerY)//第三步
+    path.lineTo(100f,centerY*2)//第五步
+    path.lineTo(0f,centerY*2)//第六步
+    path.close()//第七步
+    canvas.drawPath(path,paint)
+}
+```
+
+由于啊，我们只是花了上半部分，所以上图中的第四步没有画，我们主要是想先看看上半部分是不是我们想要的效果，运行一下，效果来咯
+
+<img src="/img/突起上半部分.jpg" style="zoom:25%;" />
+
+看起来上半部分效果确实圆滑了许多，那我依葫芦画瓢，把下半部分也完成。那下半部分的话，就是以P4为起点了
+
+![](/img/贝塞尔2.png)
+
+p1就是上半部分的p4位置，对照上半部分的相对位置，那么此时p2,p3,p4的坐标就很容易确定了
+
+p1(100f+100f,centerY)，p2(100f+90f,centerY+90f)，p3(100f,centerY+75f)，p4(100f,centerY+150f)
+
+这是代码：
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    path.lineTo(100f,0f)//第一步
+    path.lineTo(100f,centerY-150)//第二步
+    path.cubicTo(100f,centerY-150f+100,100f+90f,centerY-150+75f,100f+100f,centerY)//第三步
+    path.cubicTo(100f+90f,centerY+90f,100f,centerY+75f,100f,centerY+150f)//第四步
+    path.lineTo(100f,centerY*2)//第五步
+    path.lineTo(0f,centerY*2)//第六步
+    path.close()//第七步
+    canvas.drawPath(path,paint)
+}
+```
+
+空口无凭，来看看效果才是硬道理
+
+<img src="/img/突起3.jpg" style="zoom:25%;" />
+
+怎么样，效果是不是很好很圆滑了，再也不是尖尖角了。Mlx，YES！
+
+既然这个效果已经实现了，我们开始下一步，动画！
+
+## 拖拽动画
+
+首先，分析上面的动画，我们可以发现，这个小突起会跟随手指上下移动，并且当手指向右边滑动的时候，突起会变大，那我们先不管左右的情况，先考虑上下滑动的情况。
+
+在上面画的这个突起中，突起的最高点我们设定的Y值是centerY。突起如果移动，这几个点的相对位置应该是不会变的。唯一改变的就是突起的最高点才对。
+
+那么问题来了，突起的最高点它应该怎么变化？
+
+没错，就是跟随手指上下移动。现在情况就是这样了，突起的最高点也就是上半部分和下半部分的位置点，Y值是centerY，现在应该Y值跟随手指，而其他的相对距离保持不变。
+
+![](/img/wave突起3.png)
+
+还是以这个图为例，就是P4点的Y值改变，P1 P2 P3的X坐标都不会发生改变，Y坐标以P4的坐标为原点。这样的话就能让这个突起只是上下改变了。
+
+也就是说，
+$$
+P1(100,P4.y-150) ,P2(100,P4.y-50),P3(190,P4.y-75) P4(200,Y)
+$$
+这里唯一的变量就是Y了，Y既然跟随手指那就是手指按下的地方的Y值咯。怎么记录呢？
+
+嘿嘿嘿，就是`onTouchEvent`方法啦
+
+我们先定义一个变量currentY来记录当前手指的位置，如果没有触摸默认就是屏幕中心
+
+```kotlin
+var currentY=0f//记录当前手指触摸位置
+override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        centerX= (w/2).toFloat()
+        centerY= (h/2).toFloat()
+        currentY=centerY //默认为屏幕中心
+}
+```
+
+现在我们需要记录触摸的位置
+
+```kotlin
+override fun onTouchEvent(event: MotionEvent): Boolean {
+    when(event.action){
+        MotionEvent.ACTION_MOVE-> {
+            currentY=event.y
+            invalidate()//重新绘制界面
+        }
+    }
+    return true
+}
+```
+
+只做了这些还不够哦，我们画画的地方还没有更改呢，还没有以P4为标准呢。我们现在去改一下。当时是centerY，现在新人换旧人了，应该是currentY了
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    path.lineTo(100f,0f)
+    path.lineTo(100f,currentY-150)
+    //画上半部分
+    path.cubicTo(100f,currentY-150f+100,100f+90f,currentY-150+75f,100f+100f,currentY)
+    //画下半部分
+    path.cubicTo(100f+90f,currentY+90f,100f,currentY+75f,100f,currentY+150f)
+    path.lineTo(100f,centerY*2)
+    path.lineTo(0f,centerY*2)
+    path.close()
+    canvas.drawPath(path,paint)
+}
+```
+
+啊哈，让我们高兴得看看效果把~
+
+![](/img/突起1.gif)
+
+????
+
+![](/img/emoji/逗我.png)
+
+兄弟我真不是在逗你玩，咱们出现了一点小的失误。你想啊，path是路径对吧，我们一直在添加路径，可是之前的路径还在啊，也就是说这些路径是叠加的。所以我们需要每次绘制路径之后，删除原来的路径。
+
+就像这样：
+
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    ...
+    canvas.drawPath(path,paint)//画路径
+    path.reset()//画完之后删除之前的路径
+}
+```
+
+如此以来，我们再看一下？
+
+<img src="/img/突起2.gif" style="zoom:50%;" />
+
+这样以来，是不是可以了？简直完美！我没骗你把~
