@@ -100,6 +100,7 @@ var paint =Paint()
 init {
     paint.color=Color.RED //为了方便辨识，我们定义红色
     paint.style=Paint.Style.STROKE
+    paint.isAntiAlias=true
 }
 ```
 
@@ -479,15 +480,18 @@ var dragHeight=0
 
 然后修改一下之前的控制点和数据点的坐标，不过这里直接填写数据是不是很麻烦，根本不知道哪个点是哪个点呢。所以根据我们的图，来定义七个点，分别对应下图中的点1到点8
 
-<img src="/img/六阶贝塞尔曲线.png" style="zoom:50%;" />
+<img src="/img/贝塞尔5.png" style="zoom:50%;" />
 
-照例我们不能再ondraw中定义哦~为了方便大家能够对照图来理解，我直接按图中点来命名了，大家就不要吐槽我的命名了哦。需要注意的是，我们的曲线是两个三阶贝塞尔曲线组成的，所以P4和P5是一个点
+照例我们不能再ondraw中定义哦~为了方便大家能够对照图来理解，我直接按图中点来命名了，大家看我红色标注的点，那个才是真正的点。而且大家就不要吐槽我的命名了哦。需要注意的是，我们的曲线是两个三阶贝塞尔曲线组成的，
 
 ```kotlin
+//上半部分
 private val point1=PointF(0f,0f)
 private val point2=PointF(0f,0f)
 private val point3=PointF(0f,0f)
+//最右边
 private val point4=PointF(0f,0f)
+//下半部分
 private val point5=PointF(0f,0f)
 private val point6=PointF(0f,0f)
 private val point7=PointF(0f,0f)
@@ -495,3 +499,217 @@ private val point7=PointF(0f,0f)
 
 所以我们修改一下绘画的代码：
 
+```kotlin
+override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+	//下面分别是设置对应的七个点的坐标
+    point1.x=100f
+    point1.y=currentY-dragHeight
+
+    point2.x=100f
+    point2.y=(currentY+point1.y)/2 + 30
+
+    point3.x=(100f+dragWidth)*0.94f
+    point3.y=(point1.y+currentY)/2
+
+    point4.x=100f+dragWidth
+    point4.y=currentY
+
+    point7.x=100f
+    point7.y=currentY+dragHeight
+
+    point5.x=(100f+dragWidth)*0.94f
+    point5.y=(currentY+point7.y)/2
+
+    point6.x=100f
+    point6.y=currentY+dragHeight/2 - 30
+
+	//第一步
+    path.lineTo(100f,0f)
+    //第二步
+    path.lineTo(point1.x,point1.y)
+    //第三步，画上半部分
+    path.cubicTo(point2.x,point2.y,point3.x,point3.y,point4.x,point4.y)
+    //第四步，画下半部分
+    path.cubicTo(point5.x,point5.y,point6.x,point6.y,point7.x,point7.y)
+    //第五步
+    path.lineTo(100f,centerY*2)
+    //第六步
+    path.lineTo(0f,centerY*2)
+    //第七步
+    path.close()
+    canvas.drawPath(path,paint)
+    path.reset()
+}
+```
+
+好，完美，我们运行一下看看效果
+
+<img src="/img/waveImg1.jpg" style="zoom: 25%;" />
+
+你会发现，啥效果也没有。。哈哈哈，一切都是我蒙你的，傻了吧？
+
+![](/img/emoji/打死人.jpg)
+
+开个玩笑活跃一下氛围，毕竟大家都看了这么久了，可能都累了，不然我下面给你吃？
+
+其实没有效果很简单，我们的所有的公式都是基于这个矩形的长和宽来说的，注意啊，矩形指的是半个突起那个矩形，也就是公式里的矩形。
+
+而我们现在矩形的长和宽都是0，所以当然是没有效果啦。因此，我们需要给矩形的长和宽设定一个初始值。我们知道，矩形的长是宽度的1.5倍，所以只需要给宽设定一个初始值即可。这里初始值暂且设定为100，即
+
+```kotlin
+var dragWidth=100f
+var dragHeight=0f
+override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        dragHeight = dragWidth*1.5f
+        ...
+}
+```
+
+<img src="/img/突起2.gif" style="zoom:50%;" />
+
+说这么多，和刚才效果不是一样的？有啥用啊
+
+这你就误会了兄dei，现在我们这个突起的大小完全是按照矩形的长和宽来决定的，而矩形的长也是由矩形的宽来决定的。也就是说，矩形的宽决定了这个突起的大小。那么我们回想一下，如果右滑突起变大，本质上其实就是矩形的宽变大。在上面我们也说到了这一点。
+
+所以只需要在触摸事件那里改变矩形宽度，突起就会变化，不信我们来试试
+
+```kotlin
+override fun onTouchEvent(event: MotionEvent): Boolean {
+    when(event.action){
+        MotionEvent.ACTION_MOVE-> {
+            currentY=event.y
+            //更新矩形宽度
+            dragWidth=event.x-30
+            invalidate()
+        }
+    }
+    return true
+}
+```
+
+看看效果如何把：
+
+![](/img/贝塞尔突起3.gif)
+
+咦，有点意思了。和效果基本一样了，不过还差两点。
+
+- 最多只能滑倒屏幕中心，无法再滑动
+- 如果没有滑到屏幕中心，自动回到初始位置。
+
+我们一条一条来解决
+
+### 限制滑动距离
+
+其实这个很简单，如果当前的触摸事件的X值超过了centerX，就让它还是centerX
+
+```kotlin
+override fun onTouchEvent(event: MotionEvent): Boolean {
+    when(event.action){
+        MotionEvent.ACTION_MOVE-> {
+            currentY=event.y
+            //判断当前触摸事件的X值是否超过了屏幕中心
+            dragWidth = if(event.x>centerX){
+                centerX-30
+            }else{
+                event.x-30
+            }
+            invalidate()
+        }
+    }
+    return true
+}
+```
+
+改动很简单，这里就不放效果了。就是无法在滑过屏幕中心了。
+
+### 放手回到初始位置
+
+在没达到屏幕中心的时候，如果放手了，我们回到初始位置。这还不简单么，矩形宽度设置为初始值100不就好了么？
+
+没错就是这样，我们先判断放手。放手在什么地方判断啊，肯定还是触摸事件的方法中嘛
+
+```kotlin
+override fun onTouchEvent(event: MotionEvent): Boolean {
+    when(event.action){
+        ...
+        //手指离开屏幕
+        MotionEvent.ACTION_UP->{
+           		//如果矩形宽度小于屏幕中心
+				if(dragWidth < centerX){
+                    dragWidth=100f //回到初始位置
+                    invalidate() //更新界面
+               }
+        }
+    }
+    return true
+}
+```
+
+这还不简单？手到擒来~
+
+![](/img/贝塞尔突起4.gif)
+
+emmm，是回到初始位置了，可是人家那个是一点点回去的啊，你这突然回去简直是让我猝不及防。没有一点点防备~~~
+
+一点点回去该如何实现呢？
+
+啊，我们的老朋友属性动画又蹦出来了。没错，还是依靠我们的老朋友属性动画才能够实现。属性动画大家都比较熟悉了，我们先自定义一个属性动画，然后让它根据时间慢慢回到初始位置。而且这里，我们需要注意一点的是，原来的效果还有一个回过头的效果，其实就是一个插值器`OvershootInterpolator`。自定义估值器和插值器由于篇幅以及效果，且这两个自定义非常简单，我就不做介绍了。
+
+我们开始定义这么一个回弹动画
+
+```kotlin
+private val dragReboundAnimator = ValueAnimator.ofFloat(0f, 1f)
+private var reboundLength = 0f //需要回弹的距离是多少
+private var dragReboundX = 0f // 初始回弹地点的X值
+init{
+	...
+	dragReboundAnimator.doOnStart {
+            reboundLength = dragWidth -100
+            dragReboundX = dragWidth
+   }
+   dragReboundAnimator.duration = 700
+   dragReboundAnimator.interpolator = OvershootInterpolator(3f)
+   dragReboundAnimator.addUpdateListener {
+      dragWidth = dragReboundX - it.animatedValue as Float * reboundLength
+      invalidate()
+  }
+}
+```
+
+首先我来解释一下这几个变量的意思
+
+dragReboundAnimator是定义了一个属性动画，从0到1，比如0 0.1 0.2一直到1这样。
+
+reboundLength呢，是需要回弹的距离，比如说我现在dragWidth也就是矩形宽度是400，而初始位置是100，所以需要回弹的距离是300，也就是这300的距离需要一点点的回弹回去而如果宽度是600，那么就是500的距离一点点回去。
+
+dragReboundX是你刚开始松手的时候，我需要知道你是从哪里开始回弹的。
+
+整个流程是这样的，当需要回弹的时候，我先记录下回弹初始的位置和需要回弹的距离，然后更新的时候就是回弹初始的位置 减去回弹的距离 * 动画值。什么意思呢？就是初始距离是600，需要回弹的距离是600-100=500，并且动画值初始值为0.也就是如下
+
+600 - 500 *0=600
+
+600- 500*0.1  =550
+
+一直到 600 -500*1 =100.这样就实现了一点点的回弹。并且我们应用了OvershootInterpolator(3f)插值器，它允许你冲过头然后再回到正确位置。
+
+那我们来看一下效果把
+
+![](/img/贝塞尔突起6.gif)
+
+嗯！效果已经很好了！感觉和原图差不多了呢。在优化一些细节相信一定没问题的
+
+## 小结
+
+洋洋洒洒也写了7000多字了，可是自定义ViewGroup实在是东西太多，需要讲的内容很多。所以我已经在尽量精简的情况下，一篇文章讲完着实不大现实。而且，相信小伙伴们看到这里估计也累了，需要休息休息。
+
+所以我这里做个小结把
+
+自定义View的话，确实需要一点点分析效果，首先先做一个差不多的，然后再慢慢修改，慢慢优化。这种事情尤其是对于初学者来说是非常重要的。所以，大家可以根据我的思路来慢慢的体会。
+
+所以最终效果是ViewGroup，但是本篇讲的大多数是自定义View，这是因为自定义ViewGroup的最终目标还是能够有自定义View的效果，如果效果做不出来一切都是空谈~
+
+下一节，我将会讲解如何弹到另外一边，以及查看ViewGroup的一些知识啦~小伙伴如果喜欢的话可以点个赞，关注我~给我一些更下去的东西
+
+欢迎关注我，一个喜欢自定义View和NDK，研究源码的小喵喵
